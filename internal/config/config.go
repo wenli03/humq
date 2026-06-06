@@ -5,38 +5,32 @@ import "os"
 type Config struct {
 	Server ServerConfig
 	DB     DBConfig
-	JWT    JWTConfig
-	Kafka  KafkaConfig
 }
 
 type ServerConfig struct {
-	Port string
+	Port      string
+	StaticDir string
 }
 
 type DBConfig struct {
-	DSN string
-}
-
-type JWTConfig struct {
-	Secret             string
-	ExpireHours        int
-	RefreshExpireHours int
-}
-
-type KafkaConfig struct {
-	BootstrapServers string
+	Driver string
+	DSN    string
 }
 
 func Load() *Config {
+	staticDir := getEnv("STATIC_DIR", "web/dist")
+	if _, err := os.Stat(staticDir); os.IsNotExist(err) {
+		staticDir = ""
+	}
 	return &Config{
-		Server: ServerConfig{Port: getEnv("SERVER_PORT", "8080")},
-		DB:     DBConfig{DSN: getEnv("DB_DSN", "host=localhost user=humq password=humq dbname=humq port=5432 sslmode=disable")},
-		JWT: JWTConfig{
-			Secret:             getEnv("JWT_SECRET", "humq-secret-change-in-production"),
-			ExpireHours:        24,
-			RefreshExpireHours: 168,
+		Server: ServerConfig{
+			Port:      getEnv("SERVER_PORT", "8080"),
+			StaticDir: staticDir,
 		},
-		Kafka: KafkaConfig{BootstrapServers: getEnv("KAFKA_BOOTSTRAP", "localhost:9092")},
+		DB: DBConfig{
+			Driver: getEnv("DB_DRIVER", "sqlite"),
+			DSN:    getEnv("DB_DSN", "humq.db"),
+		},
 	}
 }
 

@@ -15,28 +15,23 @@ import (
 func main() {
 	cfg := config.Load()
 
-	demoMode := os.Getenv("DEMO_MODE") == "true"
-	db, err := database.Connect(cfg.DB.DSN)
+	db, err := database.Connect(cfg.DB.Driver, cfg.DB.DSN)
 	if err != nil {
-		if demoMode {
-			log.Println("*** DEMO MODE: running without database ***")
-			db = nil
-		} else {
-			log.Fatalf("failed to connect database: %v (set DEMO_MODE=true for demo)", err)
-		}
+		log.Println("WARN: database unavailable, running in standalone mode")
+		db = nil
 	}
 
 	if db != nil {
 		database.Migrate(db)
 		database.SeedDefaultAdmin(db)
+		log.Println("Database connected")
+	} else {
+		log.Println("Standalone mode - no database required")
 	}
 
-	r := api.SetupRouter(db, cfg, demoMode)
+	r := api.SetupRouter(db, cfg)
 
-	staticDir := os.Getenv("STATIC_DIR")
-	if staticDir == "" {
-		staticDir = "web/dist"
-	}
+	staticDir := cfg.Server.StaticDir
 	if info, err := os.Stat(staticDir); err == nil && info.IsDir() {
 		fs := http.FileServer(http.Dir(staticDir))
 		r.NoRoute(func(c *gin.Context) {
@@ -46,11 +41,12 @@ func main() {
 			}
 			fs.ServeHTTP(c.Writer, c.Request)
 		})
-		log.Printf("Serving static files from %s", staticDir)
+		log.Printf("Serving frontend from %s", staticDir)
 	}
 
-	log.Printf("HU MQ server starting on :%s (demo=%v)", cfg.Server.Port, demoMode)
+	log.Printf("HU MQ started on http://localhost:%s", cfg.Server.Port)
+	log.Printf("Default login: admin / admin")
 	if err := r.Run(":" + cfg.Server.Port); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+		log.Fatalf("failed to start: %v", err)
 	}
 }
