@@ -1,0 +1,30 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+cmd/humq-server/humq-server
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+web/dist/
+web/node_modules/
+
+# Env
+.env
+.env.local
+
+# Logs
+*.log
+
+# Temp
+tmp/
