@@ -15,15 +15,23 @@ import (
 func main() {
 	cfg := config.Load()
 
+	demoMode := os.Getenv("DEMO_MODE") == "true"
 	db, err := database.Connect(cfg.DB.DSN)
 	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
+		if demoMode {
+			log.Println("*** DEMO MODE: running without database ***")
+			db = nil
+		} else {
+			log.Fatalf("failed to connect database: %v (set DEMO_MODE=true for demo)", err)
+		}
 	}
 
-	database.Migrate(db)
-	database.SeedDefaultAdmin(db)
+	if db != nil {
+		database.Migrate(db)
+		database.SeedDefaultAdmin(db)
+	}
 
-	r := api.SetupRouter(db, cfg)
+	r := api.SetupRouter(db, cfg, demoMode)
 
 	staticDir := os.Getenv("STATIC_DIR")
 	if staticDir == "" {
@@ -41,7 +49,7 @@ func main() {
 		log.Printf("Serving static files from %s", staticDir)
 	}
 
-	log.Printf("HU MQ server starting on :%s", cfg.Server.Port)
+	log.Printf("HU MQ server starting on :%s (demo=%v)", cfg.Server.Port, demoMode)
 	if err := r.Run(":" + cfg.Server.Port); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}

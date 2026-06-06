@@ -61,3 +61,20 @@ func Login(c *gin.Context) {
 func RefreshToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "刷新成功", "data": gin.H{}})
 }
+
+func DemoLoginHandler(demoMode bool) gin.HandlerFunc {
+	if demoMode {
+		return func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 0,
+				"msg":  "登录成功（Demo模式）",
+				"data": gin.H{
+					"token":         "demo-token",
+					"refresh_token": "demo-refresh",
+					"user":          gin.H{"id": 1, "username": "admin", "role": "admin"},
+				},
+			})
+		}
+	}
+	return Login
+}
